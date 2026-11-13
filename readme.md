@@ -15,7 +15,7 @@ CV Projet est une plateforme d’aide à la recherche d’emploi. Elle centralis
 ## Technologies
 
 - **Frontend :** React, TypeScript, Vite
-- **Backend prévu :** Python
+- **Backend prévu :** Python "Django"
 - **Data science :** analyse des CV et rapprochement entre profils et offres
 - **DevOps / Cloud :** automatisation et déploiement de la plateforme
 
