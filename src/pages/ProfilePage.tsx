@@ -6,6 +6,7 @@ import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge, ProgressBar } from '@/components/ui/Badge';
+import { authApi } from '@/services/api';
 
 function Field({
   label,
@@ -69,19 +70,41 @@ export function ProfilePage() {
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [notifications, setNotifications] = useState({ email: true, push: false, weekly: true, matches: true });
   const [tab, setTab] = useState<'profile' | 'notifications' | 'security'>('profile');
 
-  const handleSave = async () => {
-    setSaving(true);
-    setSaved(false);
-    await new Promise((r) => setTimeout(r, 600));
-    updateUser(form);
-    setSaving(false);
+ const handleSave = async () => {
+  setSaving(true);
+  setSaved(false);
+  setError(null);
+
+  try {
+    const updatedUser = await authApi.updateProfile(form);
+    updateUser(updatedUser);
+
+    setForm({
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      email: updatedUser.email,
+      phone: updatedUser.phone || '',
+      location: updatedUser.location || '',
+      headline: updatedUser.headline || '',
+      bio: updatedUser.bio || '',
+    });
+
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
-  };
-
+  } catch (e) {
+    setError(
+      e instanceof Error
+        ? e.message
+        : 'Impossible d’enregistrer le profil.',
+    );
+  } finally {
+    setSaving(false);
+  }
+};
   const tabs = [
     { id: 'profile' as const, label: 'Profil', icon: UserIcon },
     { id: 'notifications' as const, label: 'Notifications', icon: Bell },
@@ -162,7 +185,13 @@ export function ProfilePage() {
                     className="w-full mt-1.5 px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition-all resize-none"
                   />
                 </label>
+                {error && (
+                  <p className="text-sm text-error-700" role="alert">
+                    {error}
+                  </p>
+                )}
 
+<div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100"></div>
                 <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                   {saved && (
                     <span className="text-sm text-success-600 flex items-center gap-1.5 animate-fade-in">

@@ -46,48 +46,18 @@ export function CVAnalysisPage() {
   }, []);
 
   const handleFile = useCallback(async (file: File) => {
-    setUploadError(null);
-    setUploading(true);
-    try {
-      const result = await cvApi.upload(file);
-      // Simulate analysis completion for the mock
-      setTimeout(() => {
-        const completed: CVAnalysisResult = {
-          ...result,
-          status: 'terminé',
-          parsedSkills: [
-            { id: 'p1', name: 'JavaScript', category: 'Langages', level: 'avancé', score: 82, verified: true },
-            { id: 'p2', name: 'React', category: 'Frontend', level: 'avancé', score: 78, verified: true },
-            { id: 'p3', name: 'Python', category: 'Langages', level: 'avancé', score: 75, verified: true },
-            { id: 'p4', name: 'TypeScript', category: 'Langages', level: 'intermédiaire', score: 68, verified: true },
-            { id: 'p5', name: 'Node.js', category: 'Backend', level: 'intermédiaire', score: 64, verified: false },
-            { id: 'p6', name: 'PostgreSQL', category: 'Base de données', level: 'intermédiaire', score: 60, verified: true },
-          ],
-          suggestedRoles: [
-            'Développeur Full-Stack Junior',
-            'Développeur Backend Python',
-            'Développeur Frontend React',
-          ],
-          matchScore: 76,
-          feedback: [
-            "Compétences techniques bien structurées et lisibles.",
-            "Ajoutez des métriques concrètes sur vos projets (ex: nombre d'utilisateurs, performance).",
-            "Mettez en avant vos certifications (AWS, Docker) même débutantes.",
-            "Pensez à ajouter un lien vers votre portfolio ou GitHub.",
-          ],
-          warnings: [
-            'Aucune expérience certifiée détectée pour Docker et AWS.',
-            'La section "Langues" est absente du CV.',
-          ],
-        };
-        setAnalyses((prev) => [completed, ...prev]);
-        setUploading(false);
-      }, 2500);
-    } catch (e) {
-      setUploadError(e instanceof Error ? e.message : 'Échec du téléversement.');
-      setUploading(false);
-    }
-  }, []);
+  setUploadError(null);
+  setUploading(true);
+
+  try {
+    const result = await cvApi.upload(file);
+    setAnalyses((previous) => [result, ...previous]);
+  } catch (e) {
+    setUploadError(e instanceof Error ? e.message : 'Échec du téléversement.');
+  } finally {
+    setUploading(false);
+  }
+}, []);
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();

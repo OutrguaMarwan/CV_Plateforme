@@ -22,8 +22,6 @@ load_dotenv(BASE_DIR / ".env")
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-n!_w$()nn_xm1+&pw28gcy!^0n=+egg+=y_m0$wv=r6tf1sy3l'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -49,6 +47,8 @@ INSTALLED_APPS = [
     "apps.applications.apps.ApplicationsConfig",
     "apps.resumes.apps.ResumesConfig",
     "apps.matching.apps.MatchingConfig",
+    "apps.dashboard.apps.DashboardConfig",
+
 ]
 
 MIDDLEWARE = [
@@ -133,6 +133,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+MEDIA_ROOT = BASE_DIR / "private_uploads"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -143,4 +144,14 @@ CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
 
 AUTH_USER_MODEL = "accounts.User"
 
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
+
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+

@@ -18,6 +18,7 @@ import { Badge, ProgressBar, ScoreRing } from '@/components/ui/Badge';
 import { LoadingState, ErrorState, EmptyState } from '@/components/ui/States';
 import { JobCard } from '@/components/jobs/JobCard';
 import { Link } from '@/router';
+import { useAuth } from '@/context/AuthContext';
 
 function StatCard({
   label,
@@ -76,6 +77,7 @@ function ActivityChart({ data }: { data: DashboardAnalytics['weeklyActivity'] })
 }
 
 export function DashboardPage() {
+  const { user } = useAuth();
   const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [gaps, setGaps] = useState<SkillGap[]>([]);
@@ -111,7 +113,7 @@ export function DashboardPage() {
   return (
     <DashboardLayout>
       <PageHeader
-        title="Bonjour, Yasmine 👋"
+        title={user?.firstName ? `Bonjour, ${user.firstName} 👋` : 'Bonjour 👋'}
         subtitle="Voici un aperçu de votre recherche d'emploi aujourd'hui."
         action={
           <Link to="/jobs">
