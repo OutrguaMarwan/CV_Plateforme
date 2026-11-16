@@ -1,4 +1,4 @@
-import { Building2, MapPin, Briefcase, Clock, Wifi, ArrowRight } from 'lucide-react';
+import { Building2, MapPin, Briefcase, Clock, Wifi, ArrowRight, ExternalLink } from 'lucide-react';
 import type { Job } from '@/types';
 import { Badge, ScoreRing } from '@/components/ui/Badge';
 import { CompanyLogo } from '@/components/ui/Avatar';
@@ -19,59 +19,78 @@ function timeAgo(iso: string): string {
   return `Il y a ${Math.floor(days / 7)} sem.`;
 }
 
+function sourceLabel(source: string): string {
+  return source.toLowerCase() === 'jobicy'
+    ? 'Jobicy'
+    : source.charAt(0).toUpperCase() + source.slice(1);
+}
+
 export function JobCard({ job, compact }: { job: Job; compact?: boolean }) {
   return (
-    <Link
-      to={`/jobs/${job.id}`}
-      className="block group"
-    >
-      <div className="bg-white rounded-2xl border border-slate-200/70 shadow-card p-5 transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-slate-300 h-full flex flex-col">
-        <div className="flex items-start gap-3 mb-3">
-          <CompanyLogo name={job.company} color={job.logoColor} />
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-navy-900 leading-snug group-hover:text-brand-700 transition-colors line-clamp-2">
-              {job.title}
-            </h3>
-            <p className="text-sm text-slate-500 flex items-center gap-1.5 mt-0.5">
-              <Building2 className="w-3.5 h-3.5" /> {job.company}
-            </p>
-          </div>
-          <ScoreRing score={job.matchScore} size={52} />
+    <div className="group bg-white rounded-2xl border border-slate-200/70 shadow-card p-5 transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-slate-300 h-full flex flex-col">
+      <div className="flex items-start gap-3 mb-3">
+        <CompanyLogo name={job.company} color={job.logoColor} />
+        <div className="flex-1 min-w-0">
+          <Link
+            to={`/jobs/${job.id}`}
+            className="font-semibold text-navy-900 leading-snug group-hover:text-brand-700 transition-colors line-clamp-2"
+          >
+            {job.title}
+          </Link>
+          <p className="text-sm text-slate-500 flex items-center gap-1.5 mt-0.5">
+            <Building2 className="w-3.5 h-3.5" /> {job.company}
+          </p>
         </div>
+        <ScoreRing score={job.matchScore} size={52} />
+      </div>
 
-        {!compact && (
-          <p className="text-sm text-slate-600 line-clamp-2 mb-3">{job.description}</p>
+      {!compact && (
+        <p className="text-sm text-slate-600 line-clamp-2 mb-3">{job.description}</p>
+      )}
+
+      <div className="flex flex-wrap gap-2 mb-3">
+        <Badge tone="brand" size="sm">
+          <Briefcase className="w-3 h-3" /> {typeLabels[job.type]}
+        </Badge>
+        <Badge tone="neutral" size="sm">
+          <MapPin className="w-3 h-3" /> {job.location}
+        </Badge>
+        {job.remote && (
+          <Badge tone="success" size="sm">
+            <Wifi className="w-3 h-3" /> Télétravail
+          </Badge>
+        )}
+        {job.salary && (
+          <Badge tone="navy" size="sm">{job.salary}</Badge>
+        )}
+      </div>
+
+      <div className="mt-auto">
+        {job.source && job.url && (
+          <a
+            href={job.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-brand-700 mb-3"
+          >
+            Source : {sourceLabel(job.source)}
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
         )}
 
-        <div className="flex flex-wrap gap-2 mb-3">
-          <Badge tone="brand" size="sm">
-            <Briefcase className="w-3 h-3" /> {typeLabels[job.type]}
-          </Badge>
-          <Badge tone="neutral" size="sm">
-            <MapPin className="w-3 h-3" /> {job.location}
-          </Badge>
-          {job.remote && (
-            <Badge tone="success" size="sm">
-              <Wifi className="w-3 h-3" /> Télétravail
-            </Badge>
-          )}
-          {job.salary && (
-            <Badge tone="navy" size="sm">
-              {job.salary}
-            </Badge>
-          )}
-        </div>
-
-        <div className="mt-auto flex items-center justify-between pt-2 border-t border-slate-100">
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
           <span className="text-xs text-slate-400 flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5" /> {timeAgo(job.postedAt)}
           </span>
-          <span className="text-sm font-medium text-brand-600 group-hover:text-brand-700 inline-flex items-center gap-1 transition-all group-hover:gap-2">
+          <Link
+            to={`/jobs/${job.id}`}
+            className="text-sm font-medium text-brand-600 hover:text-brand-700 inline-flex items-center gap-1"
+          >
             Voir l'offre <ArrowRight className="w-4 h-4" />
-          </span>
+          </Link>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 

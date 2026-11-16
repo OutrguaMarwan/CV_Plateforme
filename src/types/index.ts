@@ -50,6 +50,7 @@ export interface Job {
   deadline?: string;
   matchScore: number; // 0-100
   url?: string;
+  source?: string;
 }
 
 export type ApplicationStatus =
@@ -97,4 +98,5 @@ export interface DashboardAnalytics {
 export interface AuthResult {
   user: User;
   token: string;
+  refresh: string;
 }

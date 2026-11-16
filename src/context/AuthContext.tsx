@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import type { User } from '@/types';
 import { authApi } from '@/services/api';
 
@@ -18,13 +25,19 @@ interface AuthContextValue {
   updateUser: (patch: Partial<User>) => void;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+interface StoredSession {
+  user: User;
+  token: string;
+  refresh?: string;
+}
 
+const AuthContext = createContext<AuthContextValue | null>(null);
 const STORAGE_KEY = 'skillbridge_auth';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [refresh, setRefresh] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,30 +45,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw) as { user: User; token: string };
-        setUser(parsed.user);
-        setToken(parsed.token);
+        const parsed: unknown = JSON.parse(raw);
+        if (
+          typeof parsed === 'object' &&
+          parsed !== null &&
+          'user' in parsed &&
+          'token' in parsed &&
+          typeof parsed.token === 'string'
+        ) {
+          setUser(parsed.user as User);
+          setToken(parsed.token);
+          if ('refresh' in parsed && typeof parsed.refresh === 'string') {
+            setRefresh(parsed.refresh);
+          }
+        }
       }
     } catch {
-      /* ignore */
+      localStorage.removeItem(STORAGE_KEY);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const persist = (u: User | null, t: string | null) => {
-    if (u && t) localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: u, token: t }));
-    else localStorage.removeItem(STORAGE_KEY);
+  useEffect(() => {
+    const onTokensRefreshed = (event: Event) => {
+      const detail = (event as CustomEvent<{ token: string; refresh?: string }>).detail;
+      setToken(detail.token);
+      if (detail.refresh) setRefresh(detail.refresh);
+    };
+
+    const onSessionExpired = () => {
+      setUser(null);
+      setToken(null);
+      setRefresh(null);
+      setError('Votre session a expiré. Veuillez vous reconnecter.');
+    };
+
+    window.addEventListener('skillbridge:tokens-refreshed', onTokensRefreshed);
+    window.addEventListener('skillbridge:session-expired', onSessionExpired);
+
+    return () => {
+      window.removeEventListener('skillbridge:tokens-refreshed', onTokensRefreshed);
+      window.removeEventListener('skillbridge:session-expired', onSessionExpired);
+    };
+  }, []);
+
+  const persist = (
+    currentUser: User | null,
+    currentToken: string | null,
+    currentRefresh: string | null,
+  ) => {
+    if (currentUser && currentToken) {
+      const session: StoredSession = {
+        user: currentUser,
+        token: currentToken,
+        ...(currentRefresh ? { refresh: currentRefresh } : {}),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
   };
 
   const login = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
     try {
-      const { user: u, token: t } = await authApi.login(email, password);
-      setUser(u);
-      setToken(t);
-      persist(u, t);
+      const result = await authApi.login(email, password);
+      setUser(result.user);
+      setToken(result.token);
+      setRefresh(result.refresh);
+      persist(result.user, result.token, result.refresh);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Échec de la connexion.');
       throw e;
@@ -73,10 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const { user: u, token: t } = await authApi.register(input);
-      setUser(u);
-      setToken(t);
-      persist(u, t);
+      await authApi.register(input);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Échec de l'inscription.");
       throw e;
@@ -88,15 +145,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     setToken(null);
-    persist(null, null);
+    setRefresh(null);
+    setError(null);
+    persist(null, null, null);
   };
 
   const updateUser = (patch: Partial<User>) => {
-    setUser((prev) => {
-      if (!prev) return prev;
-      const next = { ...prev, ...patch };
-      if (token) persist(next, token);
-      return next;
+    setUser((previousUser) => {
+      if (!previousUser) return previousUser;
+
+      const updatedUser = { ...previousUser, ...patch };
+      persist(updatedUser, token, refresh);
+      return updatedUser;
     });
   };
 
@@ -109,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  return context;
 }

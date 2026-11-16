@@ -20,9 +20,22 @@ class OffreEmploi(models.Model):
     date_publication = models.DateTimeField()
     date_limite = models.DateField(null=True, blank=True)
 
-    # Extension validée : conserver la provenance et le lien de l’annonce importée.
     source = models.CharField(max_length=50)
+    identifiant_source = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+    )
     url = models.URLField()
+    actif = models.BooleanField(default=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("source", "identifiant_source"),
+                name="uniq_job_source_id",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.titre} — {self.entreprise}"
